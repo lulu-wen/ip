@@ -2,13 +2,13 @@ import java.util.Scanner;
 import java.util.ArrayList;
 
 public class Lumi {
-    static String logo = " _    _   _ __  __ ___ \n"
+    static final String LOGO = " _    _   _ __  __ ___ \n"
             + "| |  | | | |  \\/  |_ _|\n"
             + "| |  | | | | |\\/| || | \n"
             + "| |__| |_| | |  | || | \n"
             + "|_____\\___/|_|  |_|___|\n";
-    static String line = "____________________________________________________________\n";
-    static String indent = "  ";
+    static final String LINE = "____________________________________________________________\n";
+    static final String INDENT = "  ";
     static ArrayList<Task> tasks = new ArrayList<>();
 
     public static void addTask(String description) {
@@ -26,44 +26,44 @@ public class Lumi {
     }
 
     public static void speak(String... messages) {
-        System.out.println(line);
+        System.out.println(LINE);
         for (String message : messages) {
             // one speak, one line
-            System.out.println(indent + message);
+            System.out.println(INDENT + message);
         }
-        System.out.println(line);
+        System.out.println(LINE);
     }
 
     public static void greet() {
         System.out.println("Hello from");
-        System.out.println(logo + line);
-        System.out.println(indent + "Hello! I'm Lumi");
-        System.out.println(indent + "What can I do for you?");
+        System.out.println(LOGO + LINE);
+        System.out.println(INDENT + "Hello! I'm Lumi");
+        System.out.println(INDENT + "What can I do for you?");
     }
 
     public static void main(String[] args) {
         greet();
-        System.out.print(line);
+        System.out.print(LINE);
         Scanner scanner = new Scanner(System.in);
-        while(scanner.hasNextLine()) {
+        while (scanner.hasNextLine()) {
             String input = scanner.nextLine().trim();
             if (input.isEmpty()) {
                 continue;
             }
-            String[] input_part = input.split(" ",2);
-            String cmd = input_part[0].trim();
-            if(input.toLowerCase().equals("bye")) {
+            String[] inputParts = input.split(" ", 2);
+            String cmd = inputParts[0].trim();
+            if (input.toLowerCase().equals("bye")) {
                 break;
             } else if (input.toLowerCase().equals("list")) {
                 listTasks();
             } else if (cmd.toLowerCase().equals("mark")) {
-                int cmd_id = Integer.parseInt(input_part[1].trim()) - 1; // 0-based
-                tasks.get(cmd_id).markAsDone();
-                speak("Nice! I've marked this task as done:",  "  " + tasks.get((cmd_id)));
+                int taskIndex = Integer.parseInt(inputParts[1].trim()) - 1; // 0-based
+                tasks.get(taskIndex).markAsDone();
+                speak("Nice! I've marked this task as done:", "  " + tasks.get(taskIndex));
             } else if (cmd.toLowerCase().equals("unmark")) {
-                int cmd_id = Integer.parseInt(input_part[1].trim()) - 1; // 0-based
-                tasks.get(cmd_id).markAsNotDone();
-                speak("OK, I've marked this task as not done yet:", "  " + tasks.get(cmd_id));
+                int taskIndex = Integer.parseInt(inputParts[1].trim()) - 1; // 0-based
+                tasks.get(taskIndex).markAsNotDone();
+                speak("OK, I've marked this task as not done yet:", "  " + tasks.get(taskIndex));
             } else {
                 addTask(input);
             }
