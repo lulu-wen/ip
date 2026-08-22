@@ -9,17 +9,18 @@ public class Lumi {
             + "|_____\\___/|_|  |_|___|\n";
     static String line = "____________________________________________________________\n";
     static String indent = "  ";
-    static ArrayList<String> tasks = new ArrayList<>();
+    static ArrayList<Task> tasks = new ArrayList<>();
 
     public static void addTask(String description) {
-        tasks.add(description);
+        tasks.add(new Task(description));
         speak("added: " + description);
     }
 
     public static void listTasks() {
-        String[] lines = new String[tasks.size()];
+        String[] lines = new String[tasks.size() + 1];
+        lines[0] = "Here are the tasks in your list:";
         for (int i = 0; i < tasks.size(); i++) {
-            lines[i] = (i + 1) + ". " + tasks.get(i);
+            lines[i + 1] = (i + 1) + ". " + tasks.get(i);
         }
         speak(lines);
     }
@@ -46,10 +47,23 @@ public class Lumi {
         Scanner scanner = new Scanner(System.in);
         while(scanner.hasNextLine()) {
             String input = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                continue;
+            }
+            String[] input_part = input.split(" ",2);
+            String cmd = input_part[0].trim();
             if(input.toLowerCase().equals("bye")) {
                 break;
             } else if (input.toLowerCase().equals("list")) {
                 listTasks();
+            } else if (cmd.toLowerCase().equals("mark")) {
+                int cmd_id = Integer.parseInt(input_part[1].trim()) - 1; // 0-based
+                tasks.get(cmd_id).markAsDone();
+                speak("Nice! I've marked this task as done:",  "  " + tasks.get((cmd_id)));
+            } else if (cmd.toLowerCase().equals("unmark")) {
+                int cmd_id = Integer.parseInt(input_part[1].trim()) - 1; // 0-based
+                tasks.get(cmd_id).markAsNotDone();
+                speak("OK, I've marked this task as not done yet:", "  " + tasks.get(cmd_id));
             } else {
                 addTask(input);
             }
@@ -57,3 +71,4 @@ public class Lumi {
         speak("Bye. Hope to see you again soon!");
     }
 }
+
