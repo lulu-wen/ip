@@ -67,7 +67,7 @@ public class Lumi {
     private static boolean executeInput(String input) {
         String[] inputParts = input.split(" ", KEYWORD_AND_REMAINDER);
         String command = inputParts[0].toLowerCase();
-        return executeCommand(command, remainderOf(inputParts));
+        return executeCommand(command, extractRemainder(inputParts));
     }
 
     /** Executes one user command. Returns true if the program should keep running. */
@@ -102,7 +102,7 @@ public class Lumi {
     /** Builds a deadline from arguments shaped as {@code description /by when}. */
     private static Deadline createDeadline(String arguments) {
         String[] parts = arguments.split(OPTION_BY, KEYWORD_AND_REMAINDER);
-        return new Deadline(parts[0].trim(), remainderOf(parts));
+        return new Deadline(parts[0].trim(), extractRemainder(parts));
     }
 
     /** Builds an event from arguments shaped as {@code description /from start /to end}. */
@@ -113,14 +113,14 @@ public class Lumi {
             return new Event(description, "", "");
         }
         String[] toParts = fromParts[1].split(OPTION_TO, KEYWORD_AND_REMAINDER);
-        return new Event(description, toParts[0].trim(), remainderOf(toParts));
+        return new Event(description, toParts[0].trim(), extractRemainder(toParts));
     }
 
     /**
      * Returns the trimmed text that followed the separator, or an empty string
      * when the user omitted that part of the command.
      */
-    private static String remainderOf(String[] parts) {
+    private static String extractRemainder(String[] parts) {
         return parts.length > 1 ? parts[1].trim() : "";
     }
 
@@ -141,7 +141,7 @@ public class Lumi {
     }
 
     private static void setTaskDone(String arguments, boolean shouldBeDone) {
-        Task task = tasks.get(toTaskIndex(arguments));
+        Task task = tasks.get(parseTaskIndex(arguments));
         if (shouldBeDone) {
             task.markAsDone();
             speak("Nice! I've marked this task as done:", TASK_INDENT + task);
@@ -152,7 +152,7 @@ public class Lumi {
     }
 
     /** Converts the task number typed by the user into an index into {@code tasks}. */
-    private static int toTaskIndex(String arguments) {
+    private static int parseTaskIndex(String arguments) {
         return Integer.parseInt(arguments.trim()) - FIRST_TASK_NUMBER;
     }
 
