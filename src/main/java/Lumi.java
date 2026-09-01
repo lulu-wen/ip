@@ -1,6 +1,10 @@
 import java.util.ArrayList;
 import java.util.Scanner;
 
+/**
+ * A command-line task tracker. Lumi reads commands from standard input,
+ * records todos, deadlines and events, and reports the list back on request.
+ */
 public class Lumi {
     private static final String LOGO = " _    _   _ __  __ ___ \n"
             + "| |  | | | |  \\/  |_ _|\n"
@@ -23,23 +27,20 @@ public class Lumi {
     private static final String OPTION_FROM = "/from";
     private static final String OPTION_TO = "/to";
 
+    /**
+     * Split limit that keeps everything after the first separator in one piece,
+     * so that a description may itself contain spaces or further separators.
+     */
+    private static final int KEYWORD_AND_REMAINDER = 2;
+
+    /** Task numbers shown to the user start at 1, whereas list indexes start at 0. */
+    private static final int FIRST_TASK_NUMBER = 1;
+
     private static final ArrayList<Task> tasks = new ArrayList<>();
 
     public static void main(String[] args) {
         greet();
-        try (Scanner scanner = new Scanner(System.in)) {
-            boolean isRunning = true;
-            while (isRunning && scanner.hasNextLine()) {
-                String input = scanner.nextLine().trim();
-                if (input.isEmpty()) {
-                    continue;
-                }
-                String[] inputParts = input.split(" ", 2);
-                String command = inputParts[0].toLowerCase();
-                String arguments = (inputParts.length > 1) ? inputParts[1].trim() : "";
-                isRunning = executeCommand(command, arguments);
-            }
-        }
+        readCommandsUntilExit();
         speak("Bye. Hope to see you again soon!");
     }
 
@@ -47,6 +48,26 @@ public class Lumi {
         System.out.println("Hello from");
         System.out.println(LOGO);
         speak("Hello! I'm Lumi", "What can I do for you?");
+    }
+
+    /** Reads and runs commands until the user says bye or the input is exhausted. */
+    private static void readCommandsUntilExit() {
+        try (Scanner scanner = new Scanner(System.in)) {
+            boolean isRunning = true;
+            while (isRunning && scanner.hasNextLine()) {
+                String input = scanner.nextLine().trim();
+                if (!input.isEmpty()) {
+                    isRunning = executeInput(input);
+                }
+            }
+        }
+    }
+
+    /** Separates one line of input into its command word and arguments, then runs it. */
+    private static boolean executeInput(String input) {
+        String[] inputParts = input.split(" ", KEYWORD_AND_REMAINDER);
+        String command = inputParts[0].toLowerCase();
+        return executeCommand(command, remainderOf(inputParts));
     }
 
     /** Executes one user command. Returns true if the program should keep running. */
@@ -78,26 +99,29 @@ public class Lumi {
         }
     }
 
-    /** Creates a deadline from arguments */
+    /** Builds a deadline from arguments shaped as {@code description /by when}. */
     private static Deadline createDeadline(String arguments) {
-        String[] parts = arguments.split(OPTION_BY, 2);
-        String description = parts[0].trim();
-        String by = (parts.length > 1) ? parts[1].trim() : "";
-        return new Deadline(description, by);
+        String[] parts = arguments.split(OPTION_BY, KEYWORD_AND_REMAINDER);
+        return new Deadline(parts[0].trim(), remainderOf(parts));
     }
 
-    /** Creates an event from arguments */
+    /** Builds an event from arguments shaped as {@code description /from start /to end}. */
     private static Event createEvent(String arguments) {
-        String[] fromParts = arguments.split(OPTION_FROM, 2);
+        String[] fromParts = arguments.split(OPTION_FROM, KEYWORD_AND_REMAINDER);
         String description = fromParts[0].trim();
-        String from = "";
-        String to = "";
-        if (fromParts.length > 1) {
-            String[] toParts = fromParts[1].split(OPTION_TO, 2);
-            from = toParts[0].trim();
-            to = (toParts.length > 1) ? toParts[1].trim() : "";
+        if (fromParts.length == 1) {
+            return new Event(description, "", "");
         }
-        return new Event(description, from, to);
+        String[] toParts = fromParts[1].split(OPTION_TO, KEYWORD_AND_REMAINDER);
+        return new Event(description, toParts[0].trim(), remainderOf(toParts));
+    }
+
+    /**
+     * Returns the trimmed text that followed the separator, or an empty string
+     * when the user omitted that part of the command.
+     */
+    private static String remainderOf(String[] parts) {
+        return parts.length > 1 ? parts[1].trim() : "";
     }
 
     private static void addTask(Task task) {
@@ -108,24 +132,28 @@ public class Lumi {
     }
 
     private static void listTasks() {
-        String[] lines = new String[tasks.size() + 1];
-        lines[0] = "Here are the tasks in your list:";
+        ArrayList<String> lines = new ArrayList<>();
+        lines.add("Here are the tasks in your list:");
         for (int i = 0; i < tasks.size(); i++) {
-            lines[i + 1] = (i + 1) + "." + tasks.get(i);
+            lines.add((i + FIRST_TASK_NUMBER) + "." + tasks.get(i));
         }
-        speak(lines);
+        speak(lines.toArray(new String[0]));
     }
 
-    private static void setTaskDone(String arguments, boolean isDone) {
-        int taskIndex = Integer.parseInt(arguments.trim()) - 1;
-        Task task = tasks.get(taskIndex);
-        if (isDone) {
+    private static void setTaskDone(String arguments, boolean shouldBeDone) {
+        Task task = tasks.get(toTaskIndex(arguments));
+        if (shouldBeDone) {
             task.markAsDone();
             speak("Nice! I've marked this task as done:", TASK_INDENT + task);
         } else {
             task.markAsNotDone();
             speak("OK, I've marked this task as not done yet:", TASK_INDENT + task);
         }
+    }
+
+    /** Converts the task number typed by the user into an index into {@code tasks}. */
+    private static int toTaskIndex(String arguments) {
+        return Integer.parseInt(arguments.trim()) - FIRST_TASK_NUMBER;
     }
 
     /** Prints the given messages inside a pair of horizontal lines. */

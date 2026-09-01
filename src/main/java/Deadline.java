@@ -1,5 +1,8 @@
+/** Represents a task that has to be finished before a stated point in time. */
 public class Deadline extends Task {
-    protected String by;
+    private static final String TYPE_ICON = "D";
+
+    protected final String by;
 
     public Deadline(String description, String by) {
         super(description);
@@ -8,7 +11,7 @@ public class Deadline extends Task {
 
     @Override
     public String getTypeIcon() {
-        return "D";
+        return TYPE_ICON;
     }
 
     @Override

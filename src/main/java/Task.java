@@ -1,30 +1,34 @@
-public class Task {
-    protected String description;
+/**
+ * Represents a single item of work tracked by Lumi.
+ * A task carries a description and a completion status; each concrete
+ * subclass decides the icon that identifies its type in the task listing.
+ */
+public abstract class Task {
+    private static final String ICON_DONE = "X";
+    private static final String ICON_NOT_DONE = " ";
+
+    protected final String description;
     protected boolean isDone;
 
-    public Task(String description) {
+    protected Task(String description) {
         this.description = description;
         this.isDone = false;
     }
 
-    public String getStatusIcon() {
-        return this.isDone ? "X" : " ";
-    }
+    /** Returns the single-character icon that identifies this task's type. */
+    public abstract String getTypeIcon();
 
-    public boolean isDone() {
-        return this.isDone;
+    /** Returns the icon shown in the status box: marked when done, blank otherwise. */
+    public String getStatusIcon() {
+        return isDone ? ICON_DONE : ICON_NOT_DONE;
     }
 
     public void markAsDone() {
-        this.isDone = true;
+        isDone = true;
     }
 
     public void markAsNotDone() {
-        this.isDone = false;
-    }
-
-    public String getTypeIcon() {
-        return " ";
+        isDone = false;
     }
 
     @Override

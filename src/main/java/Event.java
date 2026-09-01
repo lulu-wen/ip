@@ -1,6 +1,9 @@
+/** Represents a task that spans a period between two stated points in time. */
 public class Event extends Task {
-    protected String from;
-    protected String to;
+    private static final String TYPE_ICON = "E";
+
+    protected final String from;
+    protected final String to;
 
     public Event(String description, String from, String to) {
         super(description);
@@ -10,7 +13,7 @@ public class Event extends Task {
 
     @Override
     public String getTypeIcon() {
-        return "E";
+        return TYPE_ICON;
     }
 
     @Override
