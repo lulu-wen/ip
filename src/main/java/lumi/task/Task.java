@@ -1,3 +1,5 @@
+package lumi.task;
+
 /**
  * Represents a single item of work tracked by Lumi.
  * A task carries a description and a completion status; each concrete

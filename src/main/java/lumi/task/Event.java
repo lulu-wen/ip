@@ -1,3 +1,5 @@
+package lumi.task;
+
 /** Represents a task that spans a period between two stated points in time. */
 public class Event extends Task {
     private static final String TYPE_ICON = "E";

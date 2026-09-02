@@ -1,5 +1,11 @@
+package lumi;
 import java.util.ArrayList;
 import java.util.Scanner;
+
+import lumi.task.Deadline;
+import lumi.task.Event;
+import lumi.task.Task;
+import lumi.task.Todo;
 
 /**
  * A command-line task tracker. Lumi reads commands from standard input,
