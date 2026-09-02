@@ -1,3 +1,5 @@
+package lumi.task;
+
 /** Represents a task that has to be finished before a stated point in time. */
 public class Deadline extends Task {
     private static final String TYPE_ICON = "D";
