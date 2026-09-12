@@ -18,3 +18,8 @@ _temp/
 
 /text-ui-test/ACTUAL.TXT
 text-ui-test/EXPECTED-UNIX.TXT
+data/
+text-ui-test/ACTUAL_SAVE.TXT
+text-ui-test/EXPECTED_SAVE-UNIX.TXT
+text-ui-test/ACTUAL_RELOAD.TXT
+text-ui-test/EXPECTED_RELOAD-UNIX.TXT
