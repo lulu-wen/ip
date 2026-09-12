@@ -17,6 +17,11 @@ public class Deadline extends Task {
     }
 
     @Override
+    public String toSaveFormat() {
+        return super.toSaveFormat() + FIELD_SEPARATOR + by;
+    }
+
+    @Override
     public String toString() {
         return super.toString() + " (by: " + by + ")";
     }
