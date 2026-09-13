@@ -11,10 +11,9 @@ Hello from
 
     ____________________________________________________________
      Here are the tasks in your list:
-     1.[T][X] read book
-     2.[D][ ] return book (by: June 6th)
-     3.[E][ ] project meeting (from: Aug 6th 2pm to: 4pm)
-     4.[T][ ] join sports club
+     1.[D][X] return book (by: June 6th)
+     2.[E][ ] project meeting (from: Aug 6th 2pm to: 4pm)
+     3.[T][ ] join sports club
     ____________________________________________________________
 
     ____________________________________________________________
