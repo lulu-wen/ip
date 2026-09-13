@@ -1,5 +1,6 @@
 package lumi;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import lumi.task.Deadline;
@@ -52,8 +53,29 @@ public class Lumi {
 
     public static void main(String[] args) {
         greet();
+        loadTasks();
         readCommandsUntilExit();
         speak("Bye. Hope to see you again soon!");
+    }
+
+    /**
+     * Fills the task list with whatever a previous run saved. A save file that
+     * cannot be read is reported and the session starts with an empty list,
+     * so a damaged file never stops Lumi from running.
+     */
+    private static void loadTasks() {
+        List<String> skipped = new ArrayList<>();
+        try {
+            tasks.addAll(Storage.load(skipped));
+        } catch (LumiException e) {
+            speak(e.getMessage(), "Starting with an empty list.");
+            return;
+        }
+        if (!skipped.isEmpty()) {
+            ArrayList<String> report = new ArrayList<>(skipped);
+            report.add("Everything else in the file was loaded.");
+            speak(report.toArray(new String[0]));
+        }
     }
 
     private static void greet() {
@@ -121,6 +143,7 @@ public class Lumi {
         if (argument.isEmpty()) {
             throw new LumiException("A todo needs a description. " + TODO_FORMAT);
         }
+        requireSavableText(argument);
         return new Todo(argument);
     }
 
@@ -136,6 +159,8 @@ public class Lumi {
         if (by.isEmpty()) {
             throw new LumiException("A deadline needs a due date. " + DEADLINE_FORMAT);
         }
+        requireSavableText(description);
+        requireSavableText(by);
 
         return new Deadline(description, by);
     }
@@ -161,6 +186,9 @@ public class Lumi {
         if (to.isEmpty()) {
             throw new LumiException("An event needs an end time. " + EVENT_FORMAT);
         }
+        requireSavableText(description);
+        requireSavableText(from);
+        requireSavableText(to);
 
         return new Event(description, from, to);
     }
@@ -173,14 +201,19 @@ public class Lumi {
         return parts.length > 1 ? parts[1].trim() : "";
     }
 
-    private static void addTask(Task task) {
+    private static void addTask(Task task) throws LumiException {
         tasks.add(task);
+        Storage.save(tasks);
         speak("Got it. I've added this task:",
                 TASK_INDENT + task,
                 "Now you have " + tasks.size() + " tasks in the list.");
     }
 
     private static void listTasks() {
+        if (tasks.isEmpty()) {
+            speak("Your list is empty. " + TODO_FORMAT);
+            return;
+        }
         ArrayList<String> lines = new ArrayList<>();
         lines.add("Here are the tasks in your list:");
         for (int i = 0; i < tasks.size(); i++) {
@@ -189,25 +222,11 @@ public class Lumi {
         speak(lines.toArray(new String[0]));
     }
 
-    /** Converts the task number typed by the user into an index into {@code tasks}. */
-    private static int parseTaskIndex(String arguments) throws LumiException {
-        int taskIndex;
-        try {
-            taskIndex = Integer.parseInt(arguments.trim()) - FIRST_TASK_NUMBER;
-        } catch (NumberFormatException e) {
-            throw new LumiException("Task numbers are digits.");
-        }
-        if (taskIndex < 0 || taskIndex >= tasks.size()) {
-            throw new LumiException("You have " + tasks.size() + " tasks, so there is no task "
-                    + (taskIndex + FIRST_TASK_NUMBER) + ".");
-        }
-        return taskIndex;
-    }
-
 
     private static void deleteTask(String arguments) throws LumiException {
         int taskIndex = parseTaskIndex(arguments);
         Task removed = tasks.remove(taskIndex);
+        Storage.save(tasks);
         speak("Noted. I've removed this task:",
                 TASK_INDENT + removed,
                 "Now you have " + tasks.size() + " tasks in the list.");
@@ -218,12 +237,57 @@ public class Lumi {
         Task task = tasks.get(taskIndex);
         if (shouldBeDone) {
             task.markAsDone();
+            Storage.save(tasks);
             speak("Nice! I've marked this task as done:", TASK_INDENT + task);
         } else {
             task.markAsNotDone();
+            Storage.save(tasks);
             speak("OK, I've marked this task as not done yet:", TASK_INDENT + task);
         }
     }
+
+    /** Converts the task number typed by the user into an index into {@code tasks}. */
+    private static int parseTaskIndex(String arguments) throws LumiException {
+        int taskIndex;
+        try {
+            taskIndex = Integer.parseInt(arguments.trim()) - FIRST_TASK_NUMBER;
+        } catch (NumberFormatException e) {
+            if (isAllDigits(arguments.trim())) {
+                throw new LumiException("That task number is far too large. Try: mark 1");
+            }
+            throw new LumiException("Task numbers are digits. Try: mark 1");
+        }
+        if (taskIndex < 0 || taskIndex >= tasks.size()) {
+            throw new LumiException("You have " + tasks.size() + " tasks, so there is no task "
+                    + (taskIndex + FIRST_TASK_NUMBER) + ".");
+        }
+        return taskIndex;
+    }
+
+    /** Returns true only for a non-empty run of digits, with no sign or spaces. */
+    private static boolean isAllDigits(String text) {
+        if (text.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < text.length(); i++) {
+            if (!Character.isDigit(text.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Rejects task text holding the character that separates fields in the save
+     * file, because saving it would make the task unreadable when loaded back.
+     */
+    private static void requireSavableText(String text) throws LumiException {
+        if (text.contains(Task.SEPARATOR_CHARACTER)) {
+            throw new LumiException("Task text cannot contain '" + Task.SEPARATOR_CHARACTER
+                    + "', because Lumi uses that to separate fields when it saves.");
+        }
+    }
+
 
     /** Prints the given messages inside a pair of horizontal lines. */
     private static void speak(String... messages) {

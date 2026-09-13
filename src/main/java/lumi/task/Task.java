@@ -6,8 +6,16 @@ package lumi.task;
  * subclass decides the icon that identifies its type in the task listing.
  */
 public abstract class Task {
+    /** The character that may not appear in task text, because the save file uses it. */
+    public static final String SEPARATOR_CHARACTER = "|";
+
+    /** Separates the fields of one task when it is written to the save file. */
+    public static final String FIELD_SEPARATOR = " " + SEPARATOR_CHARACTER + " ";
+
     private static final String ICON_DONE = "X";
     private static final String ICON_NOT_DONE = " ";
+    private static final String SAVED_DONE = "1";
+    private static final String SAVED_NOT_DONE = "0";
 
     protected final String description;
     protected boolean isDone;
@@ -23,6 +31,16 @@ public abstract class Task {
     /** Returns the icon shown in the status box: marked when done, blank otherwise. */
     public String getStatusIcon() {
         return isDone ? ICON_DONE : ICON_NOT_DONE;
+    }
+
+    /**
+     * Returns this task as one line of the save file, shaped as
+     * {@code T | 1 | read book}. Subclasses append their own fields to this.
+     */
+    public String toSaveFormat() {
+        return getTypeIcon() + FIELD_SEPARATOR
+                + (isDone ? SAVED_DONE : SAVED_NOT_DONE) + FIELD_SEPARATOR
+                + description;
     }
 
     public void markAsDone() {

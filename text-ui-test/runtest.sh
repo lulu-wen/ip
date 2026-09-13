@@ -5,11 +5,9 @@
 rm -rf ../bin
 mkdir ../bin
 
-# delete output from previous run
-if [ -e "./ACTUAL.TXT" ]
-then
-    rm ACTUAL.TXT
-fi
+# delete output and saved data from the previous run
+rm -f ACTUAL.TXT ACTUAL_SAVE.TXT ACTUAL_RELOAD.TXT
+rm -rf data
 
 # compile the code into the bin folder, terminates if error occurred
 # find is used instead of a glob because the sources live in nested packages
@@ -22,17 +20,57 @@ fi
 # run the program, feed commands from input.txt and redirect the output to ACTUAL.TXT
 java -classpath ../bin lumi.Lumi < input.txt > ACTUAL.TXT
 
-# convert to UNIX format
-cp EXPECTED.TXT EXPECTED-UNIX.TXT
-dos2unix ACTUAL.TXT EXPECTED-UNIX.TXT
-
-# compare the output to the expected output
-diff ACTUAL.TXT EXPECTED-UNIX.TXT
-if [ $? -eq 0 ]
+# the console output tells us nothing about saving, so collect the save file too
+if [ -f data/lumi.txt ]
 then
-    echo "Test result: PASSED"
-    exit 0
+    cp data/lumi.txt ACTUAL_SAVE.TXT
 else
-    echo "Test result: FAILED"
+    echo "********** NO SAVE FILE WAS WRITTEN **********"
     exit 1
 fi
+
+# start a second session so that loading the saved file is exercised too
+java -classpath ../bin lumi.Lumi < input_reload.txt > ACTUAL_RELOAD.TXT
+
+# convert to UNIX format before comparing
+cp EXPECTED.TXT EXPECTED-UNIX.TXT
+cp EXPECTED_SAVE.TXT EXPECTED_SAVE-UNIX.TXT
+cp EXPECTED_RELOAD.TXT EXPECTED_RELOAD-UNIX.TXT
+dos2unix ACTUAL.TXT EXPECTED-UNIX.TXT ACTUAL_SAVE.TXT EXPECTED_SAVE-UNIX.TXT     ACTUAL_RELOAD.TXT EXPECTED_RELOAD-UNIX.TXT 2>/dev/null
+
+status=0
+
+echo "--- console output ---"
+if diff ACTUAL.TXT EXPECTED-UNIX.TXT
+then
+    echo "console: PASSED"
+else
+    echo "console: FAILED"
+    status=1
+fi
+
+echo "--- saved data ---"
+if diff ACTUAL_SAVE.TXT EXPECTED_SAVE-UNIX.TXT
+then
+    echo "saved data: PASSED"
+else
+    echo "saved data: FAILED"
+    status=1
+fi
+
+echo "--- reloaded session ---"
+if diff ACTUAL_RELOAD.TXT EXPECTED_RELOAD-UNIX.TXT
+then
+    echo "reloaded session: PASSED"
+else
+    echo "reloaded session: FAILED"
+    status=1
+fi
+
+if [ $status -eq 0 ]
+then
+    echo "Test result: PASSED"
+else
+    echo "Test result: FAILED"
+fi
+exit $status

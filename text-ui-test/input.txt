@@ -29,4 +29,24 @@ delete 1
 delete 1
 list
 delete 1
+todo a | b
+deadline x | y /by Sunday
+deadline return book
+deadline /by Sunday
+deadline return book /by June 6th
+event project meeting
+event project meeting /from Aug 6th 2pm
+event project meeting /from Aug 6th 2pm /to 4pm
+todo join sports club
+list
+mark
+mark abc
+mark 99999999999999
+mark 99
+mark 1
+mark 4
+list
+unmark 4
+list
+blah
 bye

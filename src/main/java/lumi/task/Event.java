@@ -19,6 +19,11 @@ public class Event extends Task {
     }
 
     @Override
+    public String toSaveFormat() {
+        return super.toSaveFormat() + FIELD_SEPARATOR + from + FIELD_SEPARATOR + to;
+    }
+
+    @Override
     public String toString() {
         return super.toString() + " (from: " + from + " to: " + to + ")";
     }
