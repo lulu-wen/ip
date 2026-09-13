@@ -25,6 +25,7 @@ public class Lumi {
     private static final String COMMAND_LIST = "list";
     private static final String COMMAND_MARK = "mark";
     private static final String COMMAND_UNMARK = "unmark";
+    private static final String COMMAND_DELETE = "delete";
     private static final String COMMAND_TODO = "todo";
     private static final String COMMAND_DEADLINE = "deadline";
     private static final String COMMAND_EVENT = "event";
@@ -97,6 +98,9 @@ public class Lumi {
         case COMMAND_UNMARK:
             setTaskDone(arguments, false);
             return true;
+        case COMMAND_DELETE:
+            deleteTask(arguments);
+            return true;
         case COMMAND_TODO:
             addTask(createTodo(arguments));
             return true;
@@ -108,7 +112,7 @@ public class Lumi {
             return true;
         default:
             throw new LumiException("I don't know that one. I understand: "
-                    + "todo, deadline, event, list, mark, unmark, bye.");
+                    + "todo, deadline, event, list, mark, unmark, delete, bye.");
         }
     }
 
@@ -185,12 +189,32 @@ public class Lumi {
         speak(lines.toArray(new String[0]));
     }
 
-    private static void setTaskDone(String arguments, boolean shouldBeDone) throws LumiException {
-        int taskIndex = parseTaskIndex(arguments);
+    /** Converts the task number typed by the user into an index into {@code tasks}. */
+    private static int parseTaskIndex(String arguments) throws LumiException {
+        int taskIndex;
+        try {
+            taskIndex = Integer.parseInt(arguments.trim()) - FIRST_TASK_NUMBER;
+        } catch (NumberFormatException e) {
+            throw new LumiException("Task numbers are digits.");
+        }
         if (taskIndex < 0 || taskIndex >= tasks.size()) {
             throw new LumiException("You have " + tasks.size() + " tasks, so there is no task "
-            + (taskIndex + FIRST_TASK_NUMBER) + ".");
+                    + (taskIndex + FIRST_TASK_NUMBER) + ".");
         }
+        return taskIndex;
+    }
+
+
+    private static void deleteTask(String arguments) throws LumiException {
+        int taskIndex = parseTaskIndex(arguments);
+        Task removed = tasks.remove(taskIndex);
+        speak("Noted. I've removed this task:",
+                TASK_INDENT + removed,
+                "Now you have " + tasks.size() + " tasks in the list.");
+    }
+
+    private static void setTaskDone(String arguments, boolean shouldBeDone) throws LumiException {
+        int taskIndex = parseTaskIndex(arguments);
         Task task = tasks.get(taskIndex);
         if (shouldBeDone) {
             task.markAsDone();
@@ -198,15 +222,6 @@ public class Lumi {
         } else {
             task.markAsNotDone();
             speak("OK, I've marked this task as not done yet:", TASK_INDENT + task);
-        }
-    }
-
-    /** Converts the task number typed by the user into an index into {@code tasks}. */
-    private static int parseTaskIndex(String arguments) throws LumiException {
-        try {
-            return Integer.parseInt(arguments.trim()) - FIRST_TASK_NUMBER;
-        } catch (NumberFormatException e) {
-            throw new LumiException("Task numbers are digits.");
         }
     }
 
