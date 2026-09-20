@@ -1,5 +1,11 @@
 package lumi;
 
+import lumi.command.AddCommand;
+import lumi.command.Command;
+import lumi.command.DeleteCommand;
+import lumi.command.ExitCommand;
+import lumi.command.ListCommand;
+import lumi.command.MarkCommand;
 import lumi.task.Deadline;
 import lumi.task.Event;
 import lumi.task.Task;
@@ -17,6 +23,15 @@ public class Parser {
     public static final String DEADLINE_FORMAT = "Try: deadline return book /by Sunday";
     public static final String EVENT_FORMAT = "Try: event project meeting /from Mon 2pm /to 4pm";
 
+    private static final String COMMAND_BYE = "bye";
+    private static final String COMMAND_LIST = "list";
+    private static final String COMMAND_MARK = "mark";
+    private static final String COMMAND_UNMARK = "unmark";
+    private static final String COMMAND_DELETE = "delete";
+    private static final String COMMAND_TODO = "todo";
+    private static final String COMMAND_DEADLINE = "deadline";
+    private static final String COMMAND_EVENT = "event";
+
     private static final String OPTION_BY = "/by";
     private static final String OPTION_FROM = "/from";
     private static final String OPTION_TO = "/to";
@@ -27,13 +42,45 @@ public class Parser {
      */
     private static final int KEYWORD_AND_REMAINDER = 2;
 
+    /**
+     * Works out which command the user asked for and builds it, arguments and all.
+     *
+     * @param fullCommand One whole line as the user typed it.
+     * @return The command, ready to be run.
+     * @throws LumiException If the keyword is unknown or its arguments do not fit.
+     */
+    public static Command parse(String fullCommand) throws LumiException {
+        String arguments = parseArguments(fullCommand);
+        switch (parseCommandWord(fullCommand)) {
+        case COMMAND_BYE:
+            return new ExitCommand();
+        case COMMAND_LIST:
+            return new ListCommand();
+        case COMMAND_MARK:
+            return new MarkCommand(parseTaskIndex(arguments), true);
+        case COMMAND_UNMARK:
+            return new MarkCommand(parseTaskIndex(arguments), false);
+        case COMMAND_DELETE:
+            return new DeleteCommand(parseTaskIndex(arguments));
+        case COMMAND_TODO:
+            return new AddCommand(parseTodo(arguments));
+        case COMMAND_DEADLINE:
+            return new AddCommand(parseDeadline(arguments));
+        case COMMAND_EVENT:
+            return new AddCommand(parseEvent(arguments));
+        default:
+            throw new LumiException("I don't know that one. I understand: "
+                    + "todo, deadline, event, list, mark, unmark, delete, bye.");
+        }
+    }
+
     /** Returns the command word of an input line, in lower case. */
-    public static String parseCommandWord(String input) {
+    private static String parseCommandWord(String input) {
         return input.split(" ", KEYWORD_AND_REMAINDER)[0].toLowerCase();
     }
 
     /** Returns the text following the command word, or an empty string if there is none. */
-    public static String parseArguments(String input) {
+    private static String parseArguments(String input) {
         return extractRemainder(input.split(" ", KEYWORD_AND_REMAINDER));
     }
 
