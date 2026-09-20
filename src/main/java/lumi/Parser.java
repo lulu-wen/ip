@@ -4,6 +4,7 @@ import lumi.command.AddCommand;
 import lumi.command.Command;
 import lumi.command.DeleteCommand;
 import lumi.command.ExitCommand;
+import lumi.command.FindCommand;
 import lumi.command.ListCommand;
 import lumi.command.MarkCommand;
 import lumi.task.Deadline;
@@ -20,6 +21,7 @@ import lumi.task.Todo;
 public class Parser {
     /** Worked examples appended to error messages so the user can see the expected shape. */
     public static final String TODO_FORMAT = "Try: todo read book";
+    public static final String FIND_FORMAT = "Try: find book";
     public static final String DEADLINE_FORMAT = "Try: deadline return book /by Sunday";
     public static final String EVENT_FORMAT = "Try: event project meeting /from Mon 2pm /to 4pm";
 
@@ -28,6 +30,7 @@ public class Parser {
     private static final String COMMAND_MARK = "mark";
     private static final String COMMAND_UNMARK = "unmark";
     private static final String COMMAND_DELETE = "delete";
+    private static final String COMMAND_FIND = "find";
     private static final String COMMAND_TODO = "todo";
     private static final String COMMAND_DEADLINE = "deadline";
     private static final String COMMAND_EVENT = "event";
@@ -62,6 +65,8 @@ public class Parser {
             return new MarkCommand(parseTaskIndex(arguments), false);
         case COMMAND_DELETE:
             return new DeleteCommand(parseTaskIndex(arguments));
+        case COMMAND_FIND:
+            return new FindCommand(parseKeyword(arguments));
         case COMMAND_TODO:
             return new AddCommand(parseTodo(arguments));
         case COMMAND_DEADLINE:
@@ -70,8 +75,20 @@ public class Parser {
             return new AddCommand(parseEvent(arguments));
         default:
             throw new LumiException("I don't know that one. I understand: "
-                    + "todo, deadline, event, list, mark, unmark, delete, bye.");
+                    + "todo, deadline, event, list, mark, unmark, delete, find, bye.");
         }
+    }
+
+    /**
+     * Returns the text to search for.
+     *
+     * @throws LumiException If the user gave nothing to look for.
+     */
+    private static String parseKeyword(String arguments) throws LumiException {
+        if (arguments.isEmpty()) {
+            throw new LumiException("Tell me what to look for. " + FIND_FORMAT);
+        }
+        return arguments;
     }
 
     /** Returns the command word of an input line, in lower case. */

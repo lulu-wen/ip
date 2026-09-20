@@ -43,6 +43,17 @@ public abstract class Task {
                 + description;
     }
 
+    /**
+     * Returns true if the given text appears in this task's description.
+     * Only the description is searched, so looking for "d" does not match
+     * every deadline through its type icon.
+     *
+     * @param keyword Text to look for.
+     */
+    public boolean hasKeyword(String keyword) {
+        return description.contains(keyword);
+    }
+
     public void markAsDone() {
         isDone = true;
     }

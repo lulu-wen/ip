@@ -54,6 +54,22 @@ public class TaskList {
         return tasks.remove(index);
     }
 
+    /**
+     * Returns the tasks whose description mentions the given text, keeping the
+     * order they appear in the list.
+     *
+     * @param keyword Text to look for.
+     */
+    public List<Task> find(String keyword) {
+        List<Task> matches = new ArrayList<>();
+        for (Task task : tasks) {
+            if (task.hasKeyword(keyword)) {
+                matches.add(task);
+            }
+        }
+        return matches;
+    }
+
     /** Returns a read-only view, for listing the tasks and for saving them. */
     public List<Task> asList() {
         return Collections.unmodifiableList(tasks);

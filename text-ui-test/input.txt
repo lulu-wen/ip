@@ -49,4 +49,8 @@ list
 unmark 4
 list
 blah
+find book
+find meeting
+find zzz
+find
 bye
