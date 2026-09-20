@@ -37,11 +37,8 @@ public class Lumi {
      */
     private static final int KEYWORD_AND_REMAINDER = 2;
 
-    /** Task numbers shown to the user start at 1, whereas list indexes start at 0. */
-    private static final int FIRST_TASK_NUMBER = 1;
-
     private static final Ui ui = new Ui();
-    private static final ArrayList<Task> tasks = new ArrayList<>();
+    private static final TaskList tasks = new TaskList();
 
     public static void main(String[] args) {
         ui.showWelcome();
@@ -190,7 +187,7 @@ public class Lumi {
 
     private static void addTask(Task task) throws LumiException {
         tasks.add(task);
-        Storage.save(tasks);
+        Storage.save(tasks.asList());
         ui.show("Got it. I've added this task:",
                 Ui.TASK_INDENT + task,
                 "Now you have " + tasks.size() + " tasks in the list.");
@@ -203,8 +200,10 @@ public class Lumi {
         }
         ArrayList<String> lines = new ArrayList<>();
         lines.add("Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            lines.add((i + FIRST_TASK_NUMBER) + "." + tasks.get(i));
+        int number = TaskList.FIRST_TASK_NUMBER;
+        for (Task task : tasks.asList()) {
+            lines.add(number + "." + task);
+            number++;
         }
         ui.show(lines.toArray(new String[0]));
     }
@@ -213,7 +212,7 @@ public class Lumi {
     private static void deleteTask(String arguments) throws LumiException {
         int taskIndex = parseTaskIndex(arguments);
         Task removed = tasks.remove(taskIndex);
-        Storage.save(tasks);
+        Storage.save(tasks.asList());
         ui.show("Noted. I've removed this task:",
                 Ui.TASK_INDENT + removed,
                 "Now you have " + tasks.size() + " tasks in the list.");
@@ -224,31 +223,25 @@ public class Lumi {
         Task task = tasks.get(taskIndex);
         if (shouldBeDone) {
             task.markAsDone();
-            Storage.save(tasks);
+            Storage.save(tasks.asList());
             ui.show("Nice! I've marked this task as done:", Ui.TASK_INDENT + task);
         } else {
             task.markAsNotDone();
-            Storage.save(tasks);
+            Storage.save(tasks.asList());
             ui.show("OK, I've marked this task as not done yet:", Ui.TASK_INDENT + task);
         }
     }
 
     /** Converts the task number typed by the user into an index into {@code tasks}. */
     private static int parseTaskIndex(String arguments) throws LumiException {
-        int taskIndex;
         try {
-            taskIndex = Integer.parseInt(arguments.trim()) - FIRST_TASK_NUMBER;
+            return Integer.parseInt(arguments.trim()) - TaskList.FIRST_TASK_NUMBER;
         } catch (NumberFormatException e) {
             if (isAllDigits(arguments.trim())) {
                 throw new LumiException("That task number is far too large. Try: mark 1");
             }
             throw new LumiException("Task numbers are digits. Try: mark 1");
         }
-        if (taskIndex < 0 || taskIndex >= tasks.size()) {
-            throw new LumiException("You have " + tasks.size() + " tasks, so there is no task "
-                    + (taskIndex + FIRST_TASK_NUMBER) + ".");
-        }
-        return taskIndex;
     }
 
     /** Returns true only for a non-empty run of digits, with no sign or spaces. */

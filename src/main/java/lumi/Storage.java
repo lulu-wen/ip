@@ -45,7 +45,7 @@ public class Storage {
      * @param tasks The task list to record.
      * @throws LumiException If the file or its folder cannot be written.
      */
-    public static void save(ArrayList<Task> tasks) throws LumiException {
+    public static void save(List<Task> tasks) throws LumiException {
         List<String> lines = new ArrayList<>();
         for (Task task : tasks) {
             lines.add(task.toSaveFormat());
