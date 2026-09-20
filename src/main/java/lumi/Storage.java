@@ -19,7 +19,7 @@ import lumi.task.Todo;
  * saved copy and the in-memory list in step without tracking what changed.
  */
 public class Storage {
-    private static final Path SAVE_FILE = Path.of("data", "lumi.txt");
+    private final Path saveFile;
 
     private static final String SAVED_DONE = "1";
     private static final String SAVED_NOT_DONE = "0";
@@ -40,24 +40,33 @@ public class Storage {
     private static final int FIFTH_FIELD = 4;
 
     /**
+     * Creates a store backed by the given file.
+     *
+     * @param filePath Path to the save file, relative to where Lumi is run.
+     */
+    public Storage(String filePath) {
+        saveFile = Path.of(filePath);
+    }
+
+    /**
      * Writes every task to the save file, replacing its previous contents.
      *
      * @param tasks The task list to record.
      * @throws LumiException If the file or its folder cannot be written.
      */
-    public static void save(List<Task> tasks) throws LumiException {
+    public void save(List<Task> tasks) throws LumiException {
         List<String> lines = new ArrayList<>();
         for (Task task : tasks) {
             lines.add(task.toSaveFormat());
         }
         try {
-            Path folder = SAVE_FILE.getParent();
+            Path folder = saveFile.getParent();
             if (folder != null) {
                 Files.createDirectories(folder);
             }
-            Files.write(SAVE_FILE, lines);
+            Files.write(saveFile, lines);
         } catch (IOException e) {
-            throw new LumiException("I could not save your tasks to " + SAVE_FILE
+            throw new LumiException("I could not save your tasks to " + saveFile
                     + ". Check that the folder is writable.");
         }
     }
@@ -71,16 +80,16 @@ public class Storage {
      * @param skipped Collects one explanation per line that had to be left out.
      * @throws LumiException If the file exists but cannot be read at all.
      */
-    public static ArrayList<Task> load(List<String> skipped) throws LumiException {
+    public ArrayList<Task> load(List<String> skipped) throws LumiException {
         ArrayList<Task> tasks = new ArrayList<>();
         List<String> lines;
         try {
-            lines = Files.readAllLines(SAVE_FILE);
+            lines = Files.readAllLines(saveFile);
         } catch (NoSuchFileException e) {
             // Nothing has been saved yet, which is the normal first run.
             return tasks;
         } catch (IOException e) {
-            throw new LumiException("I could not read your saved tasks from " + SAVE_FILE
+            throw new LumiException("I could not read your saved tasks from " + saveFile
                     + ". Check that the file is readable.");
         }
         for (String line : lines) {
@@ -97,7 +106,7 @@ public class Storage {
     }
 
     /** Rebuilds one task from a saved line such as {@code D | 0 | return book | June 6th}. */
-    private static Task parseTask(String line) throws LumiException {
+    private Task parseTask(String line) throws LumiException {
         String[] fields = line.split(Pattern.quote(Task.SEPARATOR_CHARACTER));
         if (fields.length < TODO_FIELDS) {
             throw new LumiException(rejected(line, "it has too few fields"));
@@ -108,7 +117,7 @@ public class Storage {
     }
 
     /** Builds the right subclass for the saved type, checking that its fields are all present. */
-    private static Task createTask(String[] fields, String line) throws LumiException {
+    private Task createTask(String[] fields, String line) throws LumiException {
         String description = requireText(fields[DESCRIPTION_FIELD], line, "a description");
         switch (fields[TYPE_FIELD].trim()) {
         case TODO_TYPE:
@@ -128,7 +137,7 @@ public class Storage {
     }
 
     /** Marks the task done only for the exact saved flag; anything else means the line is bad. */
-    private static void applyDoneFlag(Task task, String flag, String line) throws LumiException {
+    private void applyDoneFlag(Task task, String flag, String line) throws LumiException {
         if (SAVED_DONE.equals(flag)) {
             task.markAsDone();
         } else if (!SAVED_NOT_DONE.equals(flag)) {
@@ -138,7 +147,7 @@ public class Storage {
     }
 
     /** A saved line must carry exactly the fields its type needs, no more and no fewer. */
-    private static void requireFieldCount(String[] fields, int expected, String line)
+    private void requireFieldCount(String[] fields, int expected, String line)
             throws LumiException {
         if (fields.length != expected) {
             throw new LumiException(rejected(line, "this task type needs exactly "
@@ -147,7 +156,7 @@ public class Storage {
     }
 
     /** Returns the trimmed field, refusing one that is empty or only spaces. */
-    private static String requireText(String field, String line, String what) throws LumiException {
+    private String requireText(String field, String line, String what) throws LumiException {
         String text = field.trim();
         if (text.isEmpty()) {
             throw new LumiException(rejected(line, "it is missing " + what));
@@ -155,7 +164,7 @@ public class Storage {
         return text;
     }
 
-    private static String rejected(String line, String reason) {
-        return "I skipped a line in " + SAVE_FILE + " because " + reason + ": " + line;
+    private String rejected(String line, String reason) {
+        return "I skipped a line in " + saveFile + " because " + reason + ": " + line;
     }
 }

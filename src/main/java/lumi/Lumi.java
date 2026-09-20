@@ -19,18 +19,35 @@ public class Lumi {
     private static final String COMMAND_DEADLINE = "deadline";
     private static final String COMMAND_EVENT = "event";
 
-    /**
-     * Split limit that keeps everything after the first separator in one piece,
-     * so that a description may itself contain spaces or further separators.
-     */
-    private static final Ui ui = new Ui();
-    private static final TaskList tasks = new TaskList();
+    /** Where the task list lives, relative to the folder Lumi is run from. */
+    private static final String SAVE_FILE_PATH = "data/lumi.txt";
 
-    public static void main(String[] args) {
+    private final Ui ui;
+    private final Storage storage;
+    private final TaskList tasks;
+
+    /**
+     * Wires up the parts Lumi needs. Nothing is read or printed here, so the
+     * order in which the user sees things stays decided by {@link #run()}.
+     *
+     * @param filePath Where the task list is kept between runs.
+     */
+    public Lumi(String filePath) {
+        ui = new Ui();
+        storage = new Storage(filePath);
+        tasks = new TaskList();
+    }
+
+    /** Greets the user, restores the saved tasks, then serves commands until bye. */
+    public void run() {
         ui.showWelcome();
         loadTasks();
         readCommandsUntilExit();
         ui.show("Bye. Hope to see you again soon!");
+    }
+
+    public static void main(String[] args) {
+        new Lumi(SAVE_FILE_PATH).run();
     }
 
     /**
@@ -38,10 +55,10 @@ public class Lumi {
      * cannot be read is reported and the session starts with an empty list,
      * so a damaged file never stops Lumi from running.
      */
-    private static void loadTasks() {
+    private void loadTasks() {
         List<String> skipped = new ArrayList<>();
         try {
-            tasks.addAll(Storage.load(skipped));
+            tasks.addAll(storage.load(skipped));
         } catch (LumiException e) {
             ui.show(e.getMessage(), "Starting with an empty list.");
             return;
@@ -54,7 +71,7 @@ public class Lumi {
     }
 
     /** Reads and runs commands until the user says bye or the input is exhausted. */
-    private static void readCommandsUntilExit() {
+    private void readCommandsUntilExit() {
         boolean isRunning = true;
         while (isRunning && ui.hasNextCommand()) {
             String input = ui.readCommand();
@@ -70,12 +87,12 @@ public class Lumi {
     }
 
     /** Separates one line of input into its command word and arguments, then runs it. */
-    private static boolean executeInput(String input) throws LumiException {
+    private boolean executeInput(String input) throws LumiException {
         return executeCommand(Parser.parseCommandWord(input), Parser.parseArguments(input));
     }
 
     /** Executes one user command. Returns true if the program should keep running. */
-    private static boolean executeCommand(String command, String arguments) throws LumiException {
+    private boolean executeCommand(String command, String arguments) throws LumiException {
         switch (command) {
         case COMMAND_BYE:
             return false;
@@ -106,15 +123,15 @@ public class Lumi {
         }
     }
 
-    private static void addTask(Task task) throws LumiException {
+    private void addTask(Task task) throws LumiException {
         tasks.add(task);
-        Storage.save(tasks.asList());
+        storage.save(tasks.asList());
         ui.show("Got it. I've added this task:",
                 Ui.TASK_INDENT + task,
                 "Now you have " + tasks.size() + " tasks in the list.");
     }
 
-    private static void listTasks() {
+    private void listTasks() {
         if (tasks.isEmpty()) {
             ui.show("Your list is empty. " + Parser.TODO_FORMAT);
             return;
@@ -129,25 +146,25 @@ public class Lumi {
         ui.show(lines.toArray(new String[0]));
     }
 
-    private static void deleteTask(String arguments) throws LumiException {
+    private void deleteTask(String arguments) throws LumiException {
         int taskIndex = Parser.parseTaskIndex(arguments);
         Task removed = tasks.remove(taskIndex);
-        Storage.save(tasks.asList());
+        storage.save(tasks.asList());
         ui.show("Noted. I've removed this task:",
                 Ui.TASK_INDENT + removed,
                 "Now you have " + tasks.size() + " tasks in the list.");
     }
 
-    private static void setTaskDone(String arguments, boolean shouldBeDone) throws LumiException {
+    private void setTaskDone(String arguments, boolean shouldBeDone) throws LumiException {
         int taskIndex = Parser.parseTaskIndex(arguments);
         Task task = tasks.get(taskIndex);
         if (shouldBeDone) {
             task.markAsDone();
-            Storage.save(tasks.asList());
+            storage.save(tasks.asList());
             ui.show("Nice! I've marked this task as done:", Ui.TASK_INDENT + task);
         } else {
             task.markAsNotDone();
-            Storage.save(tasks.asList());
+            storage.save(tasks.asList());
             ui.show("OK, I've marked this task as not done yet:", Ui.TASK_INDENT + task);
         }
     }
