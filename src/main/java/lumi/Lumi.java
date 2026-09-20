@@ -2,7 +2,12 @@ package lumi;
 import java.util.ArrayList;
 import java.util.List;
 
-import lumi.task.Task;
+import lumi.command.AddCommand;
+import lumi.command.Command;
+import lumi.command.DeleteCommand;
+import lumi.command.ExitCommand;
+import lumi.command.ListCommand;
+import lumi.command.MarkCommand;
 
 /**
  * A command-line task tracker. Lumi reads commands from standard input,
@@ -91,81 +96,35 @@ public class Lumi {
         return executeCommand(Parser.parseCommandWord(input), Parser.parseArguments(input));
     }
 
-    /** Executes one user command. Returns true if the program should keep running. */
+    /** Runs one command and reports whether the session should carry on. */
     private boolean executeCommand(String command, String arguments) throws LumiException {
+        Command toRun = createCommand(command, arguments);
+        toRun.execute(tasks, ui, storage);
+        return !toRun.isExit();
+    }
+
+    /** Chooses the command that matches the keyword, ready to be run. */
+    private Command createCommand(String command, String arguments) throws LumiException {
         switch (command) {
         case COMMAND_BYE:
-            return false;
+            return new ExitCommand();
         case COMMAND_LIST:
-            listTasks();
-            return true;
+            return new ListCommand();
         case COMMAND_MARK:
-            setTaskDone(arguments, true);
-            return true;
+            return new MarkCommand(Parser.parseTaskIndex(arguments), true);
         case COMMAND_UNMARK:
-            setTaskDone(arguments, false);
-            return true;
+            return new MarkCommand(Parser.parseTaskIndex(arguments), false);
         case COMMAND_DELETE:
-            deleteTask(arguments);
-            return true;
+            return new DeleteCommand(Parser.parseTaskIndex(arguments));
         case COMMAND_TODO:
-            addTask(Parser.parseTodo(arguments));
-            return true;
+            return new AddCommand(Parser.parseTodo(arguments));
         case COMMAND_DEADLINE:
-            addTask(Parser.parseDeadline(arguments));
-            return true;
+            return new AddCommand(Parser.parseDeadline(arguments));
         case COMMAND_EVENT:
-            addTask(Parser.parseEvent(arguments));
-            return true;
+            return new AddCommand(Parser.parseEvent(arguments));
         default:
             throw new LumiException("I don't know that one. I understand: "
                     + "todo, deadline, event, list, mark, unmark, delete, bye.");
-        }
-    }
-
-    private void addTask(Task task) throws LumiException {
-        tasks.add(task);
-        storage.save(tasks.asList());
-        ui.show("Got it. I've added this task:",
-                Ui.TASK_INDENT + task,
-                "Now you have " + tasks.size() + " tasks in the list.");
-    }
-
-    private void listTasks() {
-        if (tasks.isEmpty()) {
-            ui.show("Your list is empty. " + Parser.TODO_FORMAT);
-            return;
-        }
-        ArrayList<String> lines = new ArrayList<>();
-        lines.add("Here are the tasks in your list:");
-        int number = TaskList.FIRST_TASK_NUMBER;
-        for (Task task : tasks.asList()) {
-            lines.add(number + "." + task);
-            number++;
-        }
-        ui.show(lines.toArray(new String[0]));
-    }
-
-    private void deleteTask(String arguments) throws LumiException {
-        int taskIndex = Parser.parseTaskIndex(arguments);
-        Task removed = tasks.remove(taskIndex);
-        storage.save(tasks.asList());
-        ui.show("Noted. I've removed this task:",
-                Ui.TASK_INDENT + removed,
-                "Now you have " + tasks.size() + " tasks in the list.");
-    }
-
-    private void setTaskDone(String arguments, boolean shouldBeDone) throws LumiException {
-        int taskIndex = Parser.parseTaskIndex(arguments);
-        Task task = tasks.get(taskIndex);
-        if (shouldBeDone) {
-            task.markAsDone();
-            storage.save(tasks.asList());
-            ui.show("Nice! I've marked this task as done:", Ui.TASK_INDENT + task);
-        } else {
-            task.markAsNotDone();
-            storage.save(tasks.asList());
-            ui.show("OK, I've marked this task as not done yet:", Ui.TASK_INDENT + task);
         }
     }
 
