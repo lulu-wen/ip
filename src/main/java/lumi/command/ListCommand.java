@@ -10,6 +10,9 @@ import lumi.task.Task;
 
 /** Shows every task, numbered from 1, or says so when there is nothing to show. */
 public class ListCommand extends Command {
+    /**
+     * Shows every task, or says the list is empty and how to start it.
+     */
     @Override
     public void execute(TaskList tasks, Ui ui, Storage storage) {
         if (tasks.isEmpty()) {

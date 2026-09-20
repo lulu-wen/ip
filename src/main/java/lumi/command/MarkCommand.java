@@ -14,11 +14,20 @@ public class MarkCommand extends Command {
     private final int taskIndex;
     private final boolean shouldBeDone;
 
+    /**
+     * Creates a command that will change one task's completion status.
+     *
+     * @param taskIndex Zero-based index into the task list.
+     * @param shouldBeDone True to mark the task done, false to undo that.
+     */
     public MarkCommand(int taskIndex, boolean shouldBeDone) {
         this.taskIndex = taskIndex;
         this.shouldBeDone = shouldBeDone;
     }
 
+    /**
+     * Changes the status, records the list and confirms the new state.
+     */
     @Override
     public void execute(TaskList tasks, Ui ui, Storage storage) throws LumiException {
         Task task = tasks.get(taskIndex);

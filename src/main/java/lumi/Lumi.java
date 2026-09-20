@@ -55,6 +55,11 @@ public class Lumi {
         ui.show("Bye. Hope to see you again soon!");
     }
 
+    /**
+     * Starts Lumi against its usual save file.
+     *
+     * @param args Not used.
+     */
     public static void main(String[] args) {
         new Lumi(SAVE_FILE_PATH).run();
     }

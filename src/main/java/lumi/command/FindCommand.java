@@ -17,10 +17,18 @@ import lumi.task.Task;
 public class FindCommand extends Command {
     private final String keyword;
 
+    /**
+     * Creates a command that will search for the given text.
+     *
+     * @param keyword Text to look for in task descriptions.
+     */
     public FindCommand(String keyword) {
         this.keyword = keyword;
     }
 
+    /**
+     * Shows the matching tasks, or says that nothing mentions the keyword.
+     */
     @Override
     public void execute(TaskList tasks, Ui ui, Storage storage) {
         List<Task> matches = tasks.find(keyword);

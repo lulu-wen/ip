@@ -17,14 +17,21 @@ public class TaskList {
 
     private final ArrayList<Task> tasks = new ArrayList<>();
 
+    /** Returns how many tasks the list holds. */
     public int size() {
         return tasks.size();
     }
 
+    /** Returns true when there is nothing in the list. */
     public boolean isEmpty() {
         return tasks.isEmpty();
     }
 
+    /**
+     * Appends one task to the end of the list.
+     *
+     * @param task The task to record.
+     */
     public void add(Task task) {
         tasks.add(task);
     }
@@ -75,6 +82,13 @@ public class TaskList {
         return Collections.unmodifiableList(tasks);
     }
 
+    /**
+     * Rejects an index that names no task, explaining how many there are so the
+     * user can see what went wrong.
+     *
+     * @param index Zero-based index to check.
+     * @throws LumiException If the index falls outside the list.
+     */
     private void requireInRange(int index) throws LumiException {
         if (index < 0 || index >= tasks.size()) {
             throw new LumiException("You have " + tasks.size() + " tasks, so there is no task "

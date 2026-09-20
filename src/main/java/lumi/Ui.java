@@ -22,6 +22,7 @@ public class Ui {
 
     private final Scanner scanner;
 
+    /** Creates a display that reads its commands from standard input. */
     public Ui() {
         scanner = new Scanner(System.in);
     }

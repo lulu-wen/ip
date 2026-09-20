@@ -13,10 +13,18 @@ import lumi.task.Task;
 public class AddCommand extends Command {
     private final Task task;
 
+    /**
+     * Creates a command that will add the given task.
+     *
+     * @param task The task already built from the user's input.
+     */
     public AddCommand(Task task) {
         this.task = task;
     }
 
+    /**
+     * Appends the task, records the longer list and confirms what was added.
+     */
     @Override
     public void execute(TaskList tasks, Ui ui, Storage storage) throws LumiException {
         tasks.add(task);

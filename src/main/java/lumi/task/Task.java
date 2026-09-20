@@ -20,6 +20,11 @@ public abstract class Task {
     protected final String description;
     protected boolean isDone;
 
+    /**
+     * Creates a task that starts out not done.
+     *
+     * @param description What has to be done.
+     */
     protected Task(String description) {
         this.description = description;
         this.isDone = false;
@@ -54,14 +59,17 @@ public abstract class Task {
         return description.contains(keyword);
     }
 
+    /** Records that this task has been completed. */
     public void markAsDone() {
         isDone = true;
     }
 
+    /** Records that this task is outstanding again. */
     public void markAsNotDone() {
         isDone = false;
     }
 
+    /** Returns the listing form, shaped as {@code [T][X] description}. */
     @Override
     public String toString() {
         return "[" + getTypeIcon() + "][" + getStatusIcon() + "] " + description;
