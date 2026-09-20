@@ -1,7 +1,6 @@
 package lumi;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 import lumi.task.Deadline;
 import lumi.task.Event;
@@ -13,14 +12,6 @@ import lumi.task.Todo;
  * records todos, deadlines and events, and reports the list back on request.
  */
 public class Lumi {
-    private static final String LOGO = " _    _   _ __  __ ___ \n"
-            + "| |  | | | |  \\/  |_ _|\n"
-            + "| |  | | | | |\\/| || | \n"
-            + "| |__| |_| | |  | || | \n"
-            + "|_____\\___/|_|  |_|___|";
-    private static final String LINE = "    ____________________________________________________________";
-    private static final String INDENT = "     ";
-    private static final String TASK_INDENT = "  ";
 
     private static final String COMMAND_BYE = "bye";
     private static final String COMMAND_LIST = "list";
@@ -49,13 +40,14 @@ public class Lumi {
     /** Task numbers shown to the user start at 1, whereas list indexes start at 0. */
     private static final int FIRST_TASK_NUMBER = 1;
 
+    private static final Ui ui = new Ui();
     private static final ArrayList<Task> tasks = new ArrayList<>();
 
     public static void main(String[] args) {
-        greet();
+        ui.showWelcome();
         loadTasks();
         readCommandsUntilExit();
-        speak("Bye. Hope to see you again soon!");
+        ui.show("Bye. Hope to see you again soon!");
     }
 
     /**
@@ -68,35 +60,30 @@ public class Lumi {
         try {
             tasks.addAll(Storage.load(skipped));
         } catch (LumiException e) {
-            speak(e.getMessage(), "Starting with an empty list.");
+            ui.show(e.getMessage(), "Starting with an empty list.");
             return;
         }
         if (!skipped.isEmpty()) {
             ArrayList<String> report = new ArrayList<>(skipped);
             report.add("Everything else in the file was loaded.");
-            speak(report.toArray(new String[0]));
+            ui.show(report.toArray(new String[0]));
         }
-    }
-
-    private static void greet() {
-        System.out.println("Hello from");
-        System.out.println(LOGO);
-        speak("Hello! I'm Lumi", "What can I do for you?");
     }
 
     /** Reads and runs commands until the user says bye or the input is exhausted. */
     private static void readCommandsUntilExit() {
-        try (Scanner scanner = new Scanner(System.in)) {
-            boolean isRunning = true;
-            while (isRunning && scanner.hasNextLine()) {
-                String input = scanner.nextLine().trim();
+        boolean isRunning = true;
+        while (isRunning && ui.hasNextCommand()) {
+            String input = ui.readCommand();
+            if (!input.isEmpty()) {
                 try {
                     isRunning = executeInput(input);
                 } catch (LumiException e) {
-                    speak(e.getMessage());
+                    ui.show(e.getMessage());
                 }
             }
         }
+        ui.close();
     }
 
     /** Separates one line of input into its command word and arguments, then runs it. */
@@ -204,14 +191,14 @@ public class Lumi {
     private static void addTask(Task task) throws LumiException {
         tasks.add(task);
         Storage.save(tasks);
-        speak("Got it. I've added this task:",
-                TASK_INDENT + task,
+        ui.show("Got it. I've added this task:",
+                Ui.TASK_INDENT + task,
                 "Now you have " + tasks.size() + " tasks in the list.");
     }
 
     private static void listTasks() {
         if (tasks.isEmpty()) {
-            speak("Your list is empty. " + TODO_FORMAT);
+            ui.show("Your list is empty. " + TODO_FORMAT);
             return;
         }
         ArrayList<String> lines = new ArrayList<>();
@@ -219,7 +206,7 @@ public class Lumi {
         for (int i = 0; i < tasks.size(); i++) {
             lines.add((i + FIRST_TASK_NUMBER) + "." + tasks.get(i));
         }
-        speak(lines.toArray(new String[0]));
+        ui.show(lines.toArray(new String[0]));
     }
 
 
@@ -227,8 +214,8 @@ public class Lumi {
         int taskIndex = parseTaskIndex(arguments);
         Task removed = tasks.remove(taskIndex);
         Storage.save(tasks);
-        speak("Noted. I've removed this task:",
-                TASK_INDENT + removed,
+        ui.show("Noted. I've removed this task:",
+                Ui.TASK_INDENT + removed,
                 "Now you have " + tasks.size() + " tasks in the list.");
     }
 
@@ -238,11 +225,11 @@ public class Lumi {
         if (shouldBeDone) {
             task.markAsDone();
             Storage.save(tasks);
-            speak("Nice! I've marked this task as done:", TASK_INDENT + task);
+            ui.show("Nice! I've marked this task as done:", Ui.TASK_INDENT + task);
         } else {
             task.markAsNotDone();
             Storage.save(tasks);
-            speak("OK, I've marked this task as not done yet:", TASK_INDENT + task);
+            ui.show("OK, I've marked this task as not done yet:", Ui.TASK_INDENT + task);
         }
     }
 
@@ -289,13 +276,4 @@ public class Lumi {
     }
 
 
-    /** Prints the given messages inside a pair of horizontal lines. */
-    private static void speak(String... messages) {
-        System.out.println(LINE);
-        for (String message : messages) {
-            System.out.println(INDENT + message);
-        }
-        System.out.println(LINE);
-        System.out.println();
-    }
 }
