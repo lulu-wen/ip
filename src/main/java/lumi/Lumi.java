@@ -2,10 +2,7 @@ package lumi;
 import java.util.ArrayList;
 import java.util.List;
 
-import lumi.task.Deadline;
-import lumi.task.Event;
 import lumi.task.Task;
-import lumi.task.Todo;
 
 /**
  * A command-line task tracker. Lumi reads commands from standard input,
@@ -22,21 +19,10 @@ public class Lumi {
     private static final String COMMAND_DEADLINE = "deadline";
     private static final String COMMAND_EVENT = "event";
 
-    private static final String OPTION_BY = "/by";
-    private static final String OPTION_FROM = "/from";
-    private static final String OPTION_TO = "/to";
-
-    /** Worked examples appended to error messages so the user can see the expected shape. */
-    private static final String DEADLINE_FORMAT = "Try: deadline return book /by Sunday";
-    private static final String EVENT_FORMAT = "Try: event project meeting /from Mon 2pm /to 4pm";
-    private static final String TODO_FORMAT = "Try: todo read book";
-
     /**
      * Split limit that keeps everything after the first separator in one piece,
      * so that a description may itself contain spaces or further separators.
      */
-    private static final int KEYWORD_AND_REMAINDER = 2;
-
     private static final Ui ui = new Ui();
     private static final TaskList tasks = new TaskList();
 
@@ -85,9 +71,7 @@ public class Lumi {
 
     /** Separates one line of input into its command word and arguments, then runs it. */
     private static boolean executeInput(String input) throws LumiException {
-        String[] inputParts = input.split(" ", KEYWORD_AND_REMAINDER);
-        String command = inputParts[0].toLowerCase();
-        return executeCommand(command, extractRemainder(inputParts));
+        return executeCommand(Parser.parseCommandWord(input), Parser.parseArguments(input));
     }
 
     /** Executes one user command. Returns true if the program should keep running. */
@@ -108,81 +92,18 @@ public class Lumi {
             deleteTask(arguments);
             return true;
         case COMMAND_TODO:
-            addTask(createTodo(arguments));
+            addTask(Parser.parseTodo(arguments));
             return true;
         case COMMAND_DEADLINE:
-            addTask(createDeadline(arguments));
+            addTask(Parser.parseDeadline(arguments));
             return true;
         case COMMAND_EVENT:
-            addTask(createEvent(arguments));
+            addTask(Parser.parseEvent(arguments));
             return true;
         default:
             throw new LumiException("I don't know that one. I understand: "
                     + "todo, deadline, event, list, mark, unmark, delete, bye.");
         }
-    }
-
-    /** Builds a todo from the description in argument. */
-    private static Todo createTodo(String argument) throws LumiException {
-        if (argument.isEmpty()) {
-            throw new LumiException("A todo needs a description. " + TODO_FORMAT);
-        }
-        requireSavableText(argument);
-        return new Todo(argument);
-    }
-
-    /** Builds a deadline from arguments shaped as {@code description /by when}. */
-    private static Deadline createDeadline(String arguments) throws LumiException {
-        String[] parts = arguments.split(OPTION_BY, KEYWORD_AND_REMAINDER);
-        String description = parts[0].trim();
-        String by = extractRemainder(parts);
-
-        if (description.isEmpty()) {
-            throw new LumiException("A deadline needs something to do. " + DEADLINE_FORMAT);
-        }
-        if (by.isEmpty()) {
-            throw new LumiException("A deadline needs a due date. " + DEADLINE_FORMAT);
-        }
-        requireSavableText(description);
-        requireSavableText(by);
-
-        return new Deadline(description, by);
-    }
-
-    /** Builds an event from arguments shaped as {@code description /from start /to end}. */
-    private static Event createEvent(String arguments) throws LumiException {
-        String[] fromParts = arguments.split(OPTION_FROM, KEYWORD_AND_REMAINDER);
-        String description = fromParts[0].trim();
-        String from = "";
-        String to = "";
-        if (fromParts.length > 1) {
-            String[] toParts = fromParts[1].split(OPTION_TO, KEYWORD_AND_REMAINDER);
-            from = toParts[0].trim();
-            to = extractRemainder(toParts);
-        }
-
-        if (description.isEmpty()) {
-            throw new LumiException("An event needs a name. " + EVENT_FORMAT);
-        }
-        if (from.isEmpty()) {
-            throw new LumiException("An event needs a start time. " + EVENT_FORMAT);
-        }
-        if (to.isEmpty()) {
-            throw new LumiException("An event needs an end time. " + EVENT_FORMAT);
-        }
-        requireSavableText(description);
-        requireSavableText(from);
-        requireSavableText(to);
-
-        return new Event(description, from, to);
-    }
-
-    /**
-     * Returns the trimmed text that followed the separator, or an empty string
-     * when the user omitted that part of the command.
-     */
-    private static String extractRemainder(String[] parts) {
-        return parts.length > 1 ? parts[1].trim() : "";
     }
 
     private static void addTask(Task task) throws LumiException {
@@ -195,7 +116,7 @@ public class Lumi {
 
     private static void listTasks() {
         if (tasks.isEmpty()) {
-            ui.show("Your list is empty. " + TODO_FORMAT);
+            ui.show("Your list is empty. " + Parser.TODO_FORMAT);
             return;
         }
         ArrayList<String> lines = new ArrayList<>();
@@ -208,9 +129,8 @@ public class Lumi {
         ui.show(lines.toArray(new String[0]));
     }
 
-
     private static void deleteTask(String arguments) throws LumiException {
-        int taskIndex = parseTaskIndex(arguments);
+        int taskIndex = Parser.parseTaskIndex(arguments);
         Task removed = tasks.remove(taskIndex);
         Storage.save(tasks.asList());
         ui.show("Noted. I've removed this task:",
@@ -219,7 +139,7 @@ public class Lumi {
     }
 
     private static void setTaskDone(String arguments, boolean shouldBeDone) throws LumiException {
-        int taskIndex = parseTaskIndex(arguments);
+        int taskIndex = Parser.parseTaskIndex(arguments);
         Task task = tasks.get(taskIndex);
         if (shouldBeDone) {
             task.markAsDone();
@@ -231,42 +151,5 @@ public class Lumi {
             ui.show("OK, I've marked this task as not done yet:", Ui.TASK_INDENT + task);
         }
     }
-
-    /** Converts the task number typed by the user into an index into {@code tasks}. */
-    private static int parseTaskIndex(String arguments) throws LumiException {
-        try {
-            return Integer.parseInt(arguments.trim()) - TaskList.FIRST_TASK_NUMBER;
-        } catch (NumberFormatException e) {
-            if (isAllDigits(arguments.trim())) {
-                throw new LumiException("That task number is far too large. Try: mark 1");
-            }
-            throw new LumiException("Task numbers are digits. Try: mark 1");
-        }
-    }
-
-    /** Returns true only for a non-empty run of digits, with no sign or spaces. */
-    private static boolean isAllDigits(String text) {
-        if (text.isEmpty()) {
-            return false;
-        }
-        for (int i = 0; i < text.length(); i++) {
-            if (!Character.isDigit(text.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Rejects task text holding the character that separates fields in the save
-     * file, because saving it would make the task unreadable when loaded back.
-     */
-    private static void requireSavableText(String text) throws LumiException {
-        if (text.contains(Task.SEPARATOR_CHARACTER)) {
-            throw new LumiException("Task text cannot contain '" + Task.SEPARATOR_CHARACTER
-                    + "', because Lumi uses that to separate fields when it saves.");
-        }
-    }
-
 
 }
